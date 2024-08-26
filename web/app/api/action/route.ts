@@ -8,9 +8,21 @@ export async function GET(request: Request) {
     description: 'This is heyblancos demo blink.',
     title: 'DO BLINK!',
     label: 'Click me!',
-    error: {
-      message: 'This blink is not implemented yet!',
-    },
+    links: {
+      actions: [
+        {
+          href: request.url,
+          label: "same action"
+        },
+        {
+          href: request.url + "?action=another",
+          label: "another action"
+        }
+      ]
+    }
+    // error: {
+    //   message: 'This blink is not implemented yet!',
+    // },
   };
 
   const response = Response.json(responseBody, {headers: ACTIONS_CORS_HEADERS});
@@ -23,8 +35,21 @@ export async function POST(request: Request) {
   const userPubkey = requestBody.account;
   console.log(userPubkey);
 
+  const url = new URL(request.url);
+  const action = url.searchParams.get('action');
+
+  const user = new PublicKey(userPubkey);
+
   const connection = new Connection(clusterApiUrl("devnet"));
+  const ix = SystemProgram.transfer({
+    fromPubkey: user,
+    toPubkey: new PublicKey('G2k6ShTNEyJo84Gu6Dey6ubKagaFQzjBxffncNtPJuqR'),
+    lamports: 1
+  })
   const tx = new Transaction();
+  if (action == "another"){
+    tx.add(ix);
+  }
   tx.feePayer = new PublicKey(userPubkey);
   tx.recentBlockhash = (await connection.getLatestBlockhash({commitment: "finalized"})).blockhash;
   const serialTX = tx.serialize({requireAllSignatures: false, verifySignatures: false}).toString("base64");
